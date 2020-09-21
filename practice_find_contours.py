@@ -44,6 +44,6 @@ cv2.imshow("edge", edge)
 cv2.imshow("lines", color)
 cv2.waitKey()
 cv2.destroyAllWindows()
-
+ 
 
 
