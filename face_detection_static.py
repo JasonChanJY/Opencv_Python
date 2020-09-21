@@ -26,3 +26,4 @@ def detect(filename):
 
 filename = r"D:\Pycharm_project\OpencvLib\Image\gray_lena.jpg"
 detect(filename)
+ 
