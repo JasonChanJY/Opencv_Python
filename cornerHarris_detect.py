@@ -86,46 +86,42 @@ from matplotlib import pyplot as plt
 
 
 # flann单应性
-# img1 = cv2.imread(r"D:\opencv_lib\image\abbeyroad1.jpg", 0)
-# img2 = cv2.imread(r"D:\opencv_lib\image\abbeyroad.jpg", 0)
-# # img1 = cv2.resize(img1, (200, 200))
-# sift = cv2.xfeatures2d.SIFT_create()
-# kp1, des1 = sift.detectAndCompute(img1, None)
-# kp2, des2 = sift.detectAndCompute(img2, None)
+img1 = cv2.imread(r"D:\opencv_lib\image\abbeyroad1.jpg", 0)
+img2 = cv2.imread(r"D:\opencv_lib\image\abbeyroad.jpg", 0)
+sift = cv2.xfeatures2d.SIFT_create()
+kp1, des1 = sift.detectAndCompute(img1, None)
+kp2, des2 = sift.detectAndCompute(img2, None)
 
-# FLANN_INDEX_KDTREE = 0
-# indexparams = dict(algorithm= FLANN_INDEX_KDTREE, trees = 5)
-# searchparams = dict(checks = 50)
+FLANN_INDEX_KDTREE = 0
+indexparams = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+searchparams = dict(checks=50)
 
-# flann = cv2.FlannBasedMatcher(indexparams, searchparams)
-# matches = flann.knnMatch(des1, des1, k = 2)
+flann = cv2.FlannBasedMatcher(indexparams, searchparams)
+matches = flann.knnMatch(des1, des1, k=2)
 
-# min_match_count = 5
-# good = []
-# for m, n in matches:
-#     if m.distance < 0.7*n.distance:
-#         good.append(m)
+min_match_count = 100
+good = []
+for m, n in matches:
+    if m.distance < 0.7*n.distance:
+        good.append(m)
+print(len(kp2))
+if len(good) > min_match_count:
+    src_pts = np.float32([kp1[m.queryIdx].pt for m in good[:1152]]).reshape(-1, 1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good[:1152]]).reshape(-1, 1, 2)
 
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    matchMask = mask.ravel().tolist()
 
-#     if len(good) > min_match_count:
-#         src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-#         dst_pts = np.float32([kp1[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+    h, w = img1.shape
+    pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]]).reshape(-1, 1, 2)
+    dst = cv2.perspectiveTransform(pts, M)
+    img2 = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
 
-#         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-#         matchMask = mask.ravel().tolist()
+else:
+    print("not enough matches are found - %d/%d", (len(good), min_match_count))
+    matchMask = None
 
-#         h, w = img1.shape
-#         pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]]).reshape(-1, 1, 2)
-#         dst = cv2.perspectiveTransform(pts, M)
-#         img2 = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
-
-#     else:
-#         print("not enough matches are found - %d/%d", (len(good), min_match_count))
-#         matchMask = None
-
-# drawparams = dict(matchColor = (0, 255, 0), singlePointColor = (255, 0, 0),
-#                   matchesMask = matchMask, flags = 0)
-# resultimage = cv2.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **drawparams)
-
-# # matches = sorted(matches, key=lambda x: x.distance)
-# plt.imshow(resultimage, "gray"), plt.show()
+drawparams = dict(matchColor=(0, 255, 0), singlePointColor=(255, 0, 0),
+                  matchesMask=matchMask, flags=2)
+resultimage = cv2.drawMatches(img1, kp1, img2, kp2, good[:1152], None, **drawparams)
+plt.imshow(resultimage, "gray"), plt.show()
