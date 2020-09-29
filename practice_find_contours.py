@@ -2,6 +2,20 @@ import cv2
 import numpy as np
 
 
+# 轮廓检测
+# img = cv2.imread('D:/opencv_lib/image/coins.jpg', 0)
+# color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+# mask = cv2.Canny(img, 50, 100)
+# contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+# for i, contour in enumerate(contours):
+#     cv2.drawContours(color, contours, i, (255, 0, 0), -1)
+#
+# cv2.imshow("dst", color)
+# cv2.waitKey()
+# cv2.destroyAllWindows()
+
+
 # 轮廓框
 # img = cv2.imread(r'D:\opencv_lib\image\hammer.png', 0)
 # ret, thresh = cv2.threshold(img, 127, 255, 0)
@@ -63,6 +77,39 @@ import numpy as np
 # cv2.imshow("coins", coins)
 # cv2.waitKey()
 # cv2.destroyAllWindows()
+
+
+# 对象测量
+img = cv2.imread('D:/opencv_lib/image/geometry.png')
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# cv2.imshow("hammer", gray)
+# cv2.waitKey()
+gray = cv2.GaussianBlur(gray, (7, 7), 0)
+ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
+contours, hireachy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+for i, contour in enumerate(contours):
+    area = cv2.contourArea(contour)  # 计算轮廓面积
+    print(area)
+    x, y, w, h = cv2.boundingRect(contour)
+    cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 255), 2)
+    mm = cv2.moments(contour)
+    cx = np.int(mm["m10"]/(mm["m00"]+0.001))    # 利用原点矩计算重心坐标，加上0.001防止分母为0
+    cy = np.int(mm["m01"]/(mm["m00"]+0.001))
+    cv2.circle(img, (cx, cy), 4, (0, 0, 255), -1)
+    approxCurve = cv2.approxPolyDP(contour, 4, True)  # 多边形拟合函数，approxCurve.shape[0]中存储的是拟合图像所需的曲线数
+    if approxCurve.shape[0] == 4:  # 检测矩形
+        cv2.drawContours(img, contours, i, (255, 0, 0), 2)
+    if approxCurve.shape[0] == 3:  # 检测三角
+        cv2.drawContours(img, contours, i, (0, 255, 0), 2)
+    if approxCurve.shape[0] > 4:
+        cv2.drawContours(img, contours, i, (255, 255, 0), 2)
+
+
+cv2.imshow("hammer", img)
+cv2.waitKey()
+cv2.destroyAllWindows()
+
 
 
 
